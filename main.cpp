@@ -7,14 +7,17 @@
 #include <cstring>
 #include <algorithm>
 
-std::string base64_encode(const std::string &in) {
-    static const char *table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+std::string base64_encode(const std::string& in)
+{
+    static const char* table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     std::string out;
     int val = 0, valb = -6;
-    for (unsigned char c : in) {
+    for (unsigned char c : in)
+    {
         val = (val << 8) + c;
         valb += 8;
-        while (valb >= 0) {
+        while (valb >= 0)
+        {
             out.push_back(table[(val >> valb) & 0x3F]);
             valb -= 6;
         }
@@ -24,9 +27,11 @@ std::string base64_encode(const std::string &in) {
     return out;
 }
 
-std::string escape_cpp(const std::string &s) {
+std::string escape_cpp(const std::string& s)
+{
     std::string out;
-    for (char c : s) {
+    for (char c : s)
+    {
         if (c == '\"') out += "\\\"";
         else if (c == '\\') out += "\\\\";
         else if (c == '\n') out += "\\n";
@@ -35,7 +40,8 @@ std::string escape_cpp(const std::string &s) {
     return out;
 }
 
-std::string mime_type(const std::string &path) {
+std::string mime_type(const std::string& path)
+{
     auto dot = path.find_last_of('.');
     if (dot == std::string::npos) return "application/octet-stream";
     std::string ext = path.substr(dot + 1);
@@ -51,13 +57,15 @@ std::string mime_type(const std::string &path) {
     return "application/octet-stream";
 }
 
-void process_dir(std::ofstream &out, const std::string &base, const std::string &rel) {
+void process_dir(std::ofstream& out, const std::string& base, const std::string& rel)
+{
     std::string full = base + "/" + rel;
-    DIR *dir = opendir(full.c_str());
+    DIR* dir = opendir(full.c_str());
     if (!dir) return;
 
-    struct dirent *entry;
-    while ((entry = readdir(dir))) {
+    struct dirent* entry;
+    while ((entry = readdir(dir)))
+    {
         std::string name = entry->d_name;
         if (name == "." || name == "..") continue;
 
@@ -67,9 +75,12 @@ void process_dir(std::ofstream &out, const std::string &base, const std::string 
         struct stat st;
         if (stat(new_full.c_str(), &st) == -1) continue;
 
-        if (S_ISDIR(st.st_mode)) {
+        if (S_ISDIR(st.st_mode))
+        {
             process_dir(out, base, new_rel);
-        } else if (S_ISREG(st.st_mode)) {
+        }
+        else if (S_ISREG(st.st_mode))
+        {
             std::ifstream file(new_full.c_str(), std::ios::binary);
             std::stringstream buffer;
             buffer << file.rdbuf();
@@ -84,7 +95,8 @@ void process_dir(std::ofstream &out, const std::string &base, const std::string 
             out << "    res.set_content(base64_decode(base64), \"" << mime << "\");\n";
             out << "  });\n";
 
-            if (route == "/index.html") {
+            if (route == "/index.html")
+            {
                 out << "  svr.Get(R\"(/)\", [](const httplib::Request&, httplib::Response& res) {\n";
                 out << "    static const std::string base64 = R\"(" << escape_cpp(encoded) << ")\";\n";
                 out << "    res.set_content(base64_decode(base64), \"" << mime << "\");\n";
@@ -95,14 +107,17 @@ void process_dir(std::ofstream &out, const std::string &base, const std::string 
     closedir(dir);
 }
 
-int main(int argc, char *argv[]) {
-    if (argc < 3) {
+int main(int argc, char* argv[])
+{
+    if (argc < 3)
+    {
         std::cerr << "用法: " << argv[0] << " <web目录> <输出cpp文件>\n";
         return 1;
     }
 
     std::ofstream out(argv[2]);
-    if (!out) {
+    if (!out)
+    {
         std::cerr << "无法写入输出文件。\n";
         return 1;
     }
