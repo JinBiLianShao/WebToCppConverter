@@ -150,6 +150,17 @@ static std::string base64_decode(const std::string &in) {
         if (file_info.route == "/index.html") {
             out << " * - / (根目录映射到 index.html)\n";
         }
+        // MODIFICATION START: 在注释中添加 "XXX.html" -> "/xxx" 的说明
+        const std::string& route = file_info.route;
+        const std::string html_ext = ".html";
+        if (route.length() > html_ext.length() && route.substr(route.length() - html_ext.length()) == html_ext) {
+            std::string short_route = route.substr(0, route.length() - html_ext.length());
+            // 避免为 "/index.html" 创建到 "/index" 之外的根路由 "/" 说明，因为它已被特殊处理
+            if (!short_route.empty() && short_route != "/") {
+                 out << " * - " << short_route << " (映射到 " << route.substr(1) << ")\n";
+            }
+        }
+        // MODIFICATION END
     }
     out << " */\n";
 
@@ -166,6 +177,7 @@ static std::string base64_decode(const std::string &in) {
         std::string encoded = base64_encode(buffer.str());
         std::string mime = mime_type(file_info.full_path);
 
+        // 生成原始路由, e.g., /about.html
         out << "  svr.Get(R\"(" << file_info.route << ")\", [](const httplib::Request&, httplib::Response& res) {\n";
         out << "    res.set_content(base64_decode(R\"(" << encoded << ")\"), \"" << mime << "\");\n";
         out << "  });\n\n";
@@ -176,6 +188,21 @@ static std::string base64_decode(const std::string &in) {
             out << "    res.set_content(base64_decode(R\"(" << encoded << ")\"), \"" << mime << "\");\n";
             out << "  });\n\n";
         }
+
+        // MODIFICATION START: 添加将 "XXX.html" 路由到 "/xxx" 的逻辑
+        const std::string& route = file_info.route;
+        const std::string html_ext = ".html";
+        if (route.length() > html_ext.length() && route.substr(route.length() - html_ext.length()) == html_ext) {
+            std::string short_route = route.substr(0, route.length() - html_ext.length());
+             // 避免为 "/index.html" 创建到 "/index" 之外的根路由 "/"
+            if (!short_route.empty() && short_route != "/") {
+                out << "  // 将 " << route << " 映射到 " << short_route << "\n";
+                out << "  svr.Get(R\"(" << short_route << ")\", [](const httplib::Request&, httplib::Response& res) {\n";
+                out << "    res.set_content(base64_decode(R\"(" << encoded << ")\"), \"" << mime << "\");\n";
+                out << "  });\n\n";
+            }
+        }
+        // MODIFICATION END
     }
 
     out << "}\n";
