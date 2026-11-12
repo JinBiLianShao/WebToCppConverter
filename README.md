@@ -5,7 +5,7 @@
 ## v2.1 更新（gzip 压缩）
 
 - 生成头文件时先 **gzip -9 压缩** 再 base64 编码，HTML/CSS/JS 典型节省 **65~80%**（AntennaLink 实测：456591 → 117100 字节，省 74%）
-- 解压函数 **tinfl（RFC 1951 DEFLATE 解压器）内嵌在生成文件里**，带 tinfl 命名空间隔离，**不依赖 liblsx、不依赖 zlib、不依赖任何外部库**——拿到头文件就能用
+- 解压函数用 **miniz 的 tinfl（RFC 1951 DEFLATE 解压器，MIT 许可）完整源码内嵌在生成文件里**（include/tinfl_bundle.h，编译进工具二进制），带 tinfl 命名空间隔离，**不依赖 liblsx、不依赖 zlib、不依赖任何外部库**——拿到头文件就能用
 - 生成代码里的 base64 解码器改名为 decode_payload，避免与宿主工程（如 LSX_LIB::Crypto::base64Decode）符号冲突
 - --no-compress 可回退到 v2.0 的直接 base64 模式（不嵌 tinfl、不压缩）
 
@@ -62,10 +62,11 @@
 
 ## 版本
 
+- v2.1.1 — 修复大页面解压数据损坏：改用 miniz 完整 tinfl 实现（自研移植的 LZ77 距离解码有缺陷，导致 test.html/user.html 中间数据错乱、前端无参数且无法点击）（2026-11-11）
 - v2.1.0 — gzip 压缩内嵌 + 自包含 tinfl 解压器（2026-11-11）
 - v2.0.0 — 命名空间隔离、别名路由、MD5 指纹、--check、MIME 扩展、路由冲突检查
 - v1.x — 初版 base64 内嵌
 
 ## 许可
 
-tinfl 解压器基于 Joergen Ibsen 的 tinf（公有领域）裁剪适配。工具本身由连思鑫（jinbilianshao）维护。
+解压器采用 miniz 的 tinfl_decompress（RAD Game Tools / Rich Geldreich，MIT 许可），完整源码随生成头文件一起嵌入，不链接任何外部库。工具本身由连思鑫（jinbilianshao）维护。

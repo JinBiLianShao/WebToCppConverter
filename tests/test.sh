@@ -21,7 +21,7 @@ echo "========= WebToCppConverter v2.1 深度测试 ========="
 $TOOL "$WORK/web" "$WORK/out/gen.cpp" > "$WORK/log" 2>&1
 chk "compress generate exit" "$?" "0"
 chksub "tinfl namespace embedded" "$(cat "$WORK/out/gen.cpp")" "namespace tinfl"
-chksub "rawInflate embedded" "$(cat "$WORK/out/gen.cpp")" "rawInflate"
+chksub "miniz tinfl embedded" "$(cat "$WORK/out/gen.cpp")" "tinfl_decompress_mem_to_mem"
 chksub "alias route generated" "$(cat "$WORK/out/gen.cpp")" '/index'
 chksub "subdir route generated" "$(cat "$WORK/out/gen.cpp")" '/sub/page.html'
 chksub "css mime" "$(cat "$WORK/out/gen.cpp")" "text/css"
@@ -87,11 +87,11 @@ int main() {
     const unsigned char* src = (const unsigned char*)gz.data() + hdr;
     unsigned int src_len = gz.size() - hdr - 8;
     std::vector<unsigned char> out(64 * 1024);
-    unsigned int n = webcontent::tinfl::rawInflate(src, src_len, out.data(), out.size());
-    if (n == (unsigned int)-1) { printf("inflate failed"); return 1; }
+    size_t n = webcontent::tinfl::tinfl_decompress_mem_to_mem(out.data(), out.size(), src, src_len, TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF);
+    if (n == TINFL_DECOMPRESS_MEM_TO_MEM_FAILED) { printf("inflate failed"); return 1; }
     std::string page((char*)out.data(), n);
     if (page != "hello world") { printf("mismatch"); return 1; }
-    printf("roundtrip OK: %u bytes", n);
+    printf("roundtrip OK: %zu bytes", n);
     return 0;
 }
 CPPEOF
