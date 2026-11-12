@@ -20,7 +20,6 @@
  * @version 2.0.0
  */
 static const char* TINFL_BUNDLE = R"WTCBUNDLE(
-#pragma once
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
